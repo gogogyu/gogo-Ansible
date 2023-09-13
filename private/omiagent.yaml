@@ -1,0 +1,26 @@
+---
+- hosts: all
+  remote_user: root
+  become: true
+  tasks:
+  - name: copy file to remote server
+    copy:
+     src: /root/omiagent_restart.sh
+     dest: /root/omiagent_restart.sh
+     mode: 0744
+  - name: execute the script
+    shell: ./omiagent_restart.sh
+    args:
+     chdir: ~
+     executable: /bin/bash
+  - name: add omiagent restart crontab
+    shell:
+      cmd: |
+        cat <<EOF>> /etc/crontab
+        ### omiagent restart every day ###
+        00 01 * * * root /root/omiagent_restart.sh > /root/omiagent_restart.log 2>&1
+        EOF
+    args:
+      executable: /bin/bash
+  - name: restart crond
+    command: systemctl restart crond
