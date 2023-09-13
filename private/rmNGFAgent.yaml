@@ -1,0 +1,18 @@
+---
+- hosts: all
+  remote_user: root
+  become: true
+  tasks:
+  - name: remove NGFAgent crontab
+    command: sed -i '/NGFAgent/d' /var/spool/cron/root
+  - name: stop NGFAgent
+    shell: ./stop.sh
+    args:
+     chdir: /home/onm/NGFAgent/bin
+     executable: /bin/bash
+  - name: remove directroy NGFAgent
+    file:
+     path: /home/onm/NGFAgent
+     state: absent
+  - name: restart crond
+    command: systemctl restart crond
