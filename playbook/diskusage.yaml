@@ -1,0 +1,49 @@
+# playbook.yml
+- name: Collect disk usage information
+  hosts: all
+  tasks:
+    - name: Run df -h command
+      shell: df -h
+      register: disk_usage
+
+    - name: Save disk usage output to file
+      local_action:
+        module: copy
+        content: "{{ disk_usage.stdout }}"
+        dest: "./{{ inventory_hostname }}_disk_usage.txt"
+
+
+-----------------------------------------------------------------------------
+# 수집된 디스크 텍스트파일을 csv로 변환
+#-*- coding:utf-8 -*-
+
+import os
+import csv
+
+# 디렉토리 내의 모든 텍스트 파일 목록을 가져옵니다.
+directory_path = '/etc/ansible/playbook'
+file_list = [f for f in os.listdir(directory_path) if f.endswith('_disk_usage.txt')]
+
+# CSV 파일을 생성합니다.
+with open('disk_usage_report.csv', 'wb') as csvfile:
+    fieldnames = ['Hostname', 'Filesystem', 'Size', 'Used', 'Avail', 'Use%', 'Mounted on']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    writer.writeheader()
+
+    for file_name in file_list:
+        hostname = file_name.split('_')[0]
+        with open(file_name, 'r') as file:
+            lines = file.readlines()
+            for line in lines[1:]:  # 첫 번째 줄은 헤더이므로 건너뜁니다.
+                parts = line.split()
+                if len(parts) >= 6:
+                    writer.writerow({
+                        'Hostname': hostname,
+                        'Filesystem': parts[0],
+                        'Size': parts[1],
+                        'Used': parts[2],
+                        'Avail': parts[3],
+                        'Use%': parts[4],
+                        'Mounted on': parts[5]
+                    })
