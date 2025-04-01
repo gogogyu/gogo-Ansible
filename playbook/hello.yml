@@ -1,0 +1,11 @@
+hello.yml
+---
+- hosts: Common # Inventory에서 생성한 Groups
+  tasks:
+  - name: test
+    file:
+      path: /tmp/helloworld.txt
+      state: touch
+      owner: root
+      group: root
+      mode: 0644
